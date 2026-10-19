@@ -1,0 +1,14 @@
+services:
+  agro-api:
+    build: .
+    container_name: agroconnect-api
+    ports:
+      - "8000:8000"
+    environment:
+      AGRO_CORS_ORIGINS: "*"
+      AGRO_DB_PATH: "/data/agroconnect.db"
+    volumes:
+      - agro_data:/data
+    restart: unless-stopped
+volumes:
+  agro_data:

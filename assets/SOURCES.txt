@@ -1,0 +1,10 @@
+Product image sources used by the frontend (remote photo + local fallback):
+- Thai Jasmine Rice: Wikimedia Commons, CC0 — https://commons.wikimedia.org/wiki/File:Thai_Jasmine_Rice.jpg
+- Thailand longan: Wikimedia Commons, CC0 — https://commons.wikimedia.org/wiki/File:Thailand_longan.jpg
+- Cassava plant: Wikimedia Commons, CC BY 4.0 — https://commons.wikimedia.org/wiki/File:Photo_of_a_cassava_plant.jpg
+- Rubber tapping in Koh Chang: Wikimedia Commons — https://commons.wikimedia.org/wiki/File:Koh_Chang,_Thailand,_Rubber_tapping,_Latex.jpg
+- Oil palm fruits: Wikimedia Commons — https://commons.wikimedia.org/wiki/File:Oil_Palm_Fruits.jpg
+- Corn: Wikimedia Commons upload URL used in the frontend.
+- Potato: Wikimedia Commons — https://commons.wikimedia.org/wiki/File:Potato.jpg
+
+If internet images are unavailable, each product automatically falls back to a local asset, so the UI does not show a broken-image icon.
