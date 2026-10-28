@@ -15,7 +15,11 @@ def db():
 
 def init_db():
     with db() as c:
-        c.execute('''CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, fullname TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, fullname TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, gender TEXT, birth_date TEXT, privacy_consent INTEGER NOT NULL DEFAULT 0, privacy_notice_version TEXT, privacy_consent_at TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)''')
+        # Migrate an existing database created by an earlier package version.
+        cols={row['name'] for row in c.execute('PRAGMA table_info(users)').fetchall()}
+        for name, definition in [('gender','TEXT'),('birth_date','TEXT'),('privacy_consent','INTEGER NOT NULL DEFAULT 0'),('privacy_notice_version','TEXT'),('privacy_consent_at','TEXT')]:
+            if name not in cols: c.execute(f'ALTER TABLE users ADD COLUMN {name} {definition}')
         c.execute('''CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, user_id INTEGER NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(user_id) REFERENCES users(id))''')
         c.execute('''CREATE TABLE IF NOT EXISTS products(id TEXT PRIMARY KEY, owner_id INTEGER NOT NULL, name TEXT NOT NULL, category TEXT NOT NULL, price REAL NOT NULL CHECK(price>0), unit TEXT NOT NULL, province TEXT NOT NULL, photo_data TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(owner_id) REFERENCES users(id))''')
 init_db()
@@ -37,6 +41,7 @@ class RegisterIn(BaseModel):
     password: str = Field(min_length=10,max_length=128)
     gender: Optional[str] = None
     birthDate: Optional[str] = None
+    privacyConsent: bool = False
 class LoginIn(BaseModel):
     username: str
     password: str
@@ -61,13 +66,15 @@ def health(): return {'message':'AgroConnect API is running','status':'ok'}
 def health_check(): return {'status':'ok'}
 @app.post('/api/register', status_code=201)
 def register(data:RegisterIn):
+    if not data.privacyConsent:
+        raise HTTPException(422,'กรุณาอ่านประกาศความเป็นส่วนตัวและทำเครื่องหมายยินยอมก่อนสมัครสมาชิก')
     if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$',data.email): raise HTTPException(422,'รูปแบบอีเมลไม่ถูกต้อง')
     with db() as c:
         try:
-            cur=c.execute('INSERT INTO users(username,fullname,email,password_hash) VALUES(?,?,?,?)',(data.username,data.fullname.strip(),data.email.lower().strip(),password_hash(data.password)))
+            cur=c.execute('INSERT INTO users(username,fullname,email,password_hash,gender,birth_date,privacy_consent,privacy_notice_version,privacy_consent_at) VALUES(?,?,?,?,?,?,1,?,CURRENT_TIMESTAMP)',(data.username,data.fullname.strip(),data.email.lower().strip(),password_hash(data.password),data.gender,data.birthDate,'1.0'))
         except sqlite3.IntegrityError:
             raise HTTPException(409,'Username หรืออีเมลนี้ถูกใช้แล้ว')
-        return {'message':'สมัครสมาชิกสำเร็จ','user':{'id':cur.lastrowid,'username':data.username,'fullname':data.fullname,'email':data.email.lower()}}
+        return {'message':'สมัครสมาชิกสำเร็จ','user':{'id':cur.lastrowid,'username':data.username,'fullname':data.fullname,'email':data.email.lower()},'privacyConsentRecorded':True,'privacyNoticeVersion':'1.0'}
 @app.post('/api/login')
 def login(data:LoginIn):
     with db() as c: row=c.execute('SELECT * FROM users WHERE username=?',(data.username,)).fetchone()

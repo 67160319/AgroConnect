@@ -1,4 +1,5 @@
 /* AgroConnect server-backed account and product listing. Set API_BASE to your HTTPS API URL before deployment. */
+// LOCAL TEST: http://localhost:8000. For GitHub Pages, replace with the real HTTPS URL from your deployed API host.
 window.AGRO_API_BASE = window.AGRO_API_BASE || 'http://localhost:8000';
 const AGRO_API = () => String(window.AGRO_API_BASE || '').replace(/\/$/, '');
 async function agroRequest(path, options={}) {
@@ -12,7 +13,7 @@ async function agroRequest(path, options={}) {
   if(!response.ok) throw new Error(body.detail || body.message || 'ทำรายการไม่สำเร็จ');
   return body;
 }
-function agroApiMessage(msg){ const e=document.getElementById('loginMsg')||document.getElementById('registerMsg'); if(e)e.textContent=msg; else toast(msg); }
+function agroApiMessage(msg){ const e=document.getElementById('registerMsg')||document.getElementById('loginMsg'); if(e){e.textContent=msg;e.style.color='#b42318';} else if(typeof toast==='function') toast(msg); else alert(msg); }
 async function loginDemo(){
   const username=document.getElementById('username')?.value.trim()||'', password=document.getElementById('password')?.value||'';
   try { const data=await agroRequest('/api/login',{method:'POST',body:JSON.stringify({username,password})});
@@ -23,10 +24,15 @@ async function loginDemo(){
 }
 async function registerDemo(event){
   event?.preventDefault(); const form=document.getElementById('registerForm'); if(!form)return;
-  const data={fullname:form.fullname.value.trim(),username:form.username.value.trim(),email:form.email.value.trim(),password:form.password.value,gender:form.gender?.value||null,birthDate:form.birthDate?.value||null};
+  const consent=form.querySelector('[name=privacyConsent]');
+  const button=document.getElementById('registerButton');
+  const data={fullname:form.fullname.value.trim(),username:form.username.value.trim(),email:form.email.value.trim(),password:form.password.value,gender:form.gender?.value||null,birthDate:form.birthDate?.value||null,privacyConsent:!!consent?.checked};
   if(data.password.length<10){agroApiMessage('รหัสผ่านต้องมีอย่างน้อย 10 ตัวอักษรเพื่อความปลอดภัย');return;}
+  if(!data.privacyConsent){agroApiMessage('กรุณาอ่านประกาศความเป็นส่วนตัวและติ๊กยินยอมก่อนสมัครสมาชิก');consent?.focus();return;}
+  if(button)button.disabled=true;
   try { await agroRequest('/api/register',{method:'POST',body:JSON.stringify(data)}); alert('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ'); location.href='login.html'; }
   catch(e){agroApiMessage(e.message);}
+  finally {if(button)button.disabled=false;}
 }
 window.AGRO_SERVER_PRODUCTS = window.AGRO_SERVER_PRODUCTS || [];
 async function agroServerProducts(){

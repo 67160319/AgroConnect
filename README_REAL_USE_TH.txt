@@ -21,3 +21,30 @@ AgroConnect — เวอร์ชันเชื่อม API (ต้องต�
 - เพิ่มการยืนยันอีเมล, rate limiting, token expiry/revocation policy, logging, monitoring และทดสอบความปลอดภัยก่อน production
 
 สำคัญ: แพ็กเกจนี้เป็นชุดพัฒนาสำหรับนำไป deploy/test ต่อ ไม่ใช่บริการออนไลน์ที่ deploy ให้แล้ว และยังไม่ควรรับชำระเงินจริงจนกว่าระบบคำสั่งซื้อ/ชำระเงินจะพัฒนาเสร็จ
+
+
+=== แก้ปัญหา API / PDPA (ฉบับปรับปรุง) ===
+
+1) ทดสอบ API ในเครื่อง
+- เปิด Docker Desktop ให้พร้อมใช้งาน
+- เปิด Terminal ในโฟลเดอร์ backend ซึ่งมี docker-compose.yml
+- รัน: docker compose up --build -d
+- รัน: docker compose ps
+- เปิด http://localhost:8000/health ต้องเห็น {"status":"ok"}
+- เปิด http://localhost:8000/docs เพื่อตรวจ endpoint
+
+2) GitHub Pages ไม่สามารถเรียก localhost ของคอมผู้พัฒนาได้
+- ต้อง deploy backend ไป Web Service ที่รองรับ FastAPI เช่น Render
+- ตั้ง Root Directory เป็น backend
+- Build Command: pip install -r requirements.txt
+- Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
+- ตั้ง Environment Variable AGRO_CORS_ORIGINS=https://67160319.github.io
+- เมื่อ deploy สำเร็จ คัดลอก URL HTTPS จริงของ API แล้วแก้บรรทัด AGRO_API_BASE ใน api-integration.js ให้เป็น URL นั้น (ห้ามเติม /api ต่อท้าย)
+- Commit/push ไฟล์ api-integration.js ขึ้น GitHub แล้วทดสอบหน้า Login/Register อีกครั้ง
+- บริการฟรีอาจพักเมื่อไม่มีการใช้งาน และ SQLite บนพื้นที่ดิสก์ชั่วคราวอาจสูญหายเมื่อรีสตาร์ต/ดีพลอยใหม่ ห้ามใช้เก็บข้อมูลจริงระยะยาวโดยไม่มี persistent database/disk
+
+3) PDPA
+- หน้า register.html บังคับติ๊ก privacyConsent และส่งค่าสู่ API
+- backend ตรวจซ้ำและบันทึก privacy_consent, privacy_notice_version และ privacy_consent_at ในฐานข้อมูล
+- privacy.html เป็นร่างประกาศความเป็นส่วนตัว ต้องเติมช่องทางติดต่อจริง กำหนดระยะเวลาเก็บข้อมูลและตรวจฐานกฎหมายก่อนใช้งานจริง
+- การบังคับให้ยินยอมเพื่อสร้างบัญชีอาจไม่เหมาะในทุกกรณี หากการประมวลผลบางอย่างจำเป็นต่อสัญญาควรพิจารณาฐานกฎหมายให้เหมาะสมและแยกความยินยอมที่ไม่จำเป็น เช่น การตลาด ออกจากการสมัครบัญชี
