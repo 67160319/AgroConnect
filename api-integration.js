@@ -1,6 +1,8 @@
 /* AgroConnect server-backed account and product listing. Set API_BASE to your HTTPS API URL before deployment. */
 // LOCAL TEST: http://localhost:8000. For GitHub Pages, replace with the real HTTPS URL from your deployed API host.
-window.AGRO_API_BASE = window.AGRO_API_BASE || 'http://localhost:8000';
+
+window.AGRO_API_BASE = 'https://https-agroconnect-com.onrender.com';
+
 const AGRO_API = () => String(window.AGRO_API_BASE || '').replace(/\/$/, '');
 async function agroRequest(path, options={}) {
   const headers = {'Content-Type':'application/json', ...(options.headers||{})};
